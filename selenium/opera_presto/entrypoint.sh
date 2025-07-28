@@ -12,6 +12,7 @@ clean() {
     kill -TERM "$XSELD_PID"
   fi
   if [ -n "$XVFB_PID" ]; then
+    pkill -TERM -P "$XVFB_PID"
     kill -TERM "$XVFB_PID"
   fi
   if [ -n "$SELENIUM_PID" ]; then

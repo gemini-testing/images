@@ -5,8 +5,7 @@ COPY yandexdriver /usr/bin/
 COPY entrypoint.sh /
 
 RUN \
-    chmod +x /usr/bin/yandexdriver && \
-    echo "cookie-file = ~/.config/pulse/cookie" >> /etc/pulse/client.conf
+    chmod +x /usr/bin/yandexdriver
 
 USER selenium
 

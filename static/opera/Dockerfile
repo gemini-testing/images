@@ -5,8 +5,7 @@ COPY operadriver_linux64/operadriver /usr/bin/
 COPY entrypoint.sh /
 
 RUN \
-    chmod +x /usr/bin/operadriver && \
-    echo "cookie-file = ~/.config/pulse/cookie" >> /etc/pulse/client.conf
+    chmod +x /usr/bin/operadriver
 
 USER selenium
 

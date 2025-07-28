@@ -6,8 +6,7 @@ COPY msedgedriver /usr/bin/
 COPY entrypoint.sh /
 
 RUN \
-    chmod +x /usr/bin/msedgedriver && \
-    echo "cookie-file = ~/.config/pulse/cookie" >> /etc/pulse/client.conf
+    chmod +x /usr/bin/msedgedriver
 
 USER selenium
 

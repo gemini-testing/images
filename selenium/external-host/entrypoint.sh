@@ -9,6 +9,7 @@ export DISPLAY=":$DISPLAY_NUM"
 
 clean() {
   if [ -n "$XVFB_PID" ]; then
+    pkill -TERM -P "$XVFB_PID"
     kill -TERM "$XVFB_PID"
   fi
   if [ -n "$X11VNC_PID" ]; then
@@ -48,4 +49,3 @@ rproxy $URL &
 RPROXY_PID=$!
 
 wait
-

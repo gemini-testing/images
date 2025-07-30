@@ -55,7 +55,6 @@ RUN \
     xfonts-encodings \
     xfonts-utils \
     xvfb \
-    pulseaudio \
     fluxbox \
     x11vnc \
     feh \

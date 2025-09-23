@@ -3,7 +3,7 @@ SCREEN_RESOLUTION=${SCREEN_RESOLUTION:-"1920x1080x24"}
 DISPLAY_NUM=99
 export DISPLAY=":$DISPLAY_NUM"
 
-VERBOSE=${VERBOSE:-""}
+if [ -z ${VERBOSE+x} ]; then VERBOSE=1; fi
 DRIVER_ARGS=${DRIVER_ARGS:-""}
 if [ -n "$VERBOSE" ]; then
     DRIVER_ARGS="$DRIVER_ARGS --verbose"
@@ -69,25 +69,44 @@ XSELD_PID=$!
 
 while ip addr | grep inet | grep -q tentative > /dev/null; do sleep 0.1; done
 
-/usr/bin/xvfb-run -l -n "$DISPLAY_NUM" -s "-ac -screen 0 $SCREEN_RESOLUTION -noreset -listen tcp" /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
-XVFB_PID=$!
+XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -listen tcp\""
+CHROMEDRIVER_CMD="/usr/bin/chromedriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS}"
 
-retcode=1
-until [ $retcode -eq 0 ]; do
-  DISPLAY="$DISPLAY" wmctrl -m >/dev/null 2>&1
-  retcode=$?
-  if [ $retcode -ne 0 ]; then
-    echo Waiting X server...
-    sleep 0.1
-  fi
-done
+if [ "$USE_FLUXBOX" = "true" ]; then
+    /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+    XVFB_PID=$!
+
+    DISPLAY="$DISPLAY" $CHROMEDRIVER_CMD &
+    DRIVER_PID=$!
+else
+    /usr/bin/xvfb-run $XVFB_ARGS $CHROMEDRIVER_CMD &
+    XVFB_PID=$!
+fi
+
+wait_for_x_server() {
+  local cmd="$1"
+  local msg="$2"
+  local retcode=1
+
+  until [ $retcode -eq 0 ]; do
+    eval "$cmd"
+    retcode=$?
+    if [ $retcode -ne 0 ]; then
+      echo "$msg"
+      sleep 0.1
+    fi
+  done
+}
+
+if [ "$USE_FLUXBOX" = "true" ]; then
+  wait_for_x_server "DISPLAY=\"$DISPLAY\" wmctrl -m >/dev/null 2>&1" "Waiting X server and window manager..."
+else
+  wait_for_x_server "xdpyinfo -display \"$DISPLAY\" >/dev/null 2>&1" "Waiting X server..."
+fi
 
 if [ "$ENABLE_VNC" == "true" ]; then
     x11vnc -display "$DISPLAY" -passwd selenoid -shared -forever -loop500 -rfbport 5900 -rfbportv6 5900 -logfile /dev/null &
     X11VNC_PID=$!
 fi
-
-DISPLAY="$DISPLAY" /usr/bin/chromedriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS} &
-DRIVER_PID=$!
 
 wait

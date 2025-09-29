@@ -39,26 +39,45 @@ FILESERVER_PID=$!
 DISPLAY="$DISPLAY" /usr/bin/xseld &
 XSELD_PID=$!
 
-/usr/bin/xvfb-run -l -n "$DISPLAY_NUM" -s "-ac -screen 0 $SCREEN_RESOLUTION -noreset -listen tcp" /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
-XVFB_PID=$!
+XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -listen tcp\""
+SELENOID_CMD="/usr/bin/selenoid -conf /tmp/browsers.json -disable-docker -timeout 1h -max-timeout 24h -enable-file-upload -capture-driver-logs"
 
-retcode=1
-until [ $retcode -eq 0 ]; do
-  DISPLAY="$DISPLAY" wmctrl -m >/dev/null 2>&1
-  retcode=$?
-  if [ $retcode -ne 0 ]; then
-    echo Waiting X server...
-    sleep 0.1
-  fi
-done
+if [ "$USE_FLUXBOX" = "true" ]; then
+  /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+  XVFB_PID=$!
+
+  DISPLAY="$DISPLAY" $SELENOID_CMD &
+  SELENOID_PID=$!
+else
+  /usr/bin/xvfb-run $XVFB_ARGS $SELENOID_CMD &
+  XVFB_PID=$!
+fi
+
+wait_for_x_server() {
+  local cmd="$1"
+  local msg="$2"
+  local retcode=1
+
+  until [ $retcode -eq 0 ]; do
+    eval "$cmd"
+    retcode=$?
+    if [ $retcode -ne 0 ]; then
+      echo "$msg"
+      sleep 0.1
+    fi
+  done
+}
+
+if [ "$USE_FLUXBOX" = "true" ]; then
+  wait_for_x_server "DISPLAY=\"$DISPLAY\" wmctrl -m >/dev/null 2>&1" "Waiting X server and window manager..."
+else
+  wait_for_x_server "xdpyinfo -display \"$DISPLAY\" >/dev/null 2>&1" "Waiting X server..."
+fi
 
 if [ "$ENABLE_VNC" == "true" ]; then
     x11vnc -display "$DISPLAY" -passwd selenoid -shared -forever -loop500 -rfbport 5900 -rfbportv6 5900 -logfile /dev/null &
     X11VNC_PID=$!
 fi
-
-DISPLAY="$DISPLAY" /usr/bin/selenoid -conf /tmp/browsers.json -disable-docker -timeout 1h -max-timeout 24h -enable-file-upload -capture-driver-logs &
-SELENOID_PID=$!
 
 if env | grep -q ROOT_CA_; then
   while true; do

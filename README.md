@@ -20,5 +20,14 @@ This repository contains [Docker](http://docker.com/) build files to be used for
 
 Moved to: http://aerokube.com/images/latest/#_building_images
 
+### How to build chrome for testing
+
+To build a chrome image for testing, you must specify `--source-dir` option. For example:
+
+```bash
+./images chrome -b 134.0.6998.165 -d 134.0.6998.165 -t selenoid/chrome:134.0 --source-dir chrome/for-testing
+```
+
 ## Image information
+
 Moved to: http://aerokube.com/images/latest/#_browser_image_information

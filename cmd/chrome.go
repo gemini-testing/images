@@ -15,6 +15,7 @@ var (
 				BrowserChannel: browserChannel,
 				DriverVersion:  driverVersion,
 				NoCache:        noCache,
+				SourceDir:      sourceDir,
 				TestsDir:       testsDir,
 				RunTests:       test,
 				IgnoreTests:    ignoreTests,

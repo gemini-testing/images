@@ -48,6 +48,9 @@ func (c *Chrome) Build() error {
 	}
 
 	srcDir := "chrome/apt"
+	if c.SourceDir != "" {
+		srcDir = c.SourceDir
+	}
 
 	if pkgSrcPath != "" {
 		srcDir = "chrome/local"

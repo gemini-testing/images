@@ -13,6 +13,7 @@ var (
 	browserChannel string
 	driverVersion  string
 	noCache        bool
+	sourceDir      string
 	testsDir       string
 	test           bool
 	ignoreTests    bool
@@ -42,6 +43,7 @@ func initFlags() {
 	rootCmd.PersistentFlags().StringVarP(&driverVersion, "driver-version", "d", build.LatestVersion, "webdriver version")
 	rootCmd.PersistentFlags().StringVarP(&browserChannel, "channel", "c", "default", "browser channel")
 	rootCmd.PersistentFlags().BoolVarP(&noCache, "no-cache", "n", false, "do not use Docker cache")
+	rootCmd.PersistentFlags().StringVar(&sourceDir, "source-dir", "", "directory with Dockerfile to install browser")
 	rootCmd.PersistentFlags().StringVar(&testsDir, "tests-dir", defaultTestsDir, "directory with tests")
 	rootCmd.PersistentFlags().BoolVar(&test, "test", false, "run tests")
 	rootCmd.PersistentFlags().BoolVar(&ignoreTests, "ignore-tests", false, "continue to run even if tests failed")

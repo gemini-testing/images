@@ -30,6 +30,7 @@ type Requirements struct {
 	DriverVersion  string
 	Tags           []string
 	NoCache        bool
+	SourceDir      string
 	TestsDir       string
 	RunTests       bool
 	IgnoreTests    bool

@@ -43,14 +43,14 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 SELENOID_CMD="/usr/bin/selenoid -conf /tmp/browsers.json -disable-docker -timeout 1h -max-timeout 24h -enable-file-upload -capture-driver-logs"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-  /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
+    XVFB_PID=$!
 
-  DISPLAY="$DISPLAY" $SELENOID_CMD &
-  SELENOID_PID=$!
+    eval "DISPLAY=\"$DISPLAY\" $SELENOID_CMD &"
+    DRIVER_PID=$!
 else
-  /usr/bin/xvfb-run $XVFB_ARGS $SELENOID_CMD &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $SELENOID_CMD &"
+    XVFB_PID=$!
 fi
 
 wait_for_x_server() {

@@ -73,13 +73,13 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 CHROMEDRIVER_CMD="/usr/bin/chromedriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS}"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-    /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
     XVFB_PID=$!
 
-    DISPLAY="$DISPLAY" $CHROMEDRIVER_CMD &
+    eval "DISPLAY=\"$DISPLAY\" $CHROMEDRIVER_CMD &"
     DRIVER_PID=$!
 else
-    /usr/bin/xvfb-run $XVFB_ARGS $CHROMEDRIVER_CMD &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $CHROMEDRIVER_CMD &"
     XVFB_PID=$!
 fi
 

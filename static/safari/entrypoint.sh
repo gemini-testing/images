@@ -52,13 +52,13 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 WEBKITDRIVER_CMD="/opt/webkit/bin/WebKitWebDriver --port=5555 --host=0.0.0.0 ${DRIVER_ARGS}"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-    /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
     XVFB_PID=$!
 
-    DISPLAY="$DISPLAY" $WEBKITDRIVER_CMD &
+    eval "DISPLAY=\"$DISPLAY\" $WEBKITDRIVER_CMD &"
     DRIVER_PID=$!
 else
-    /usr/bin/xvfb-run $XVFB_ARGS $WEBKITDRIVER_CMD &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $WEBKITDRIVER_CMD &"
     XVFB_PID=$!
 fi
 

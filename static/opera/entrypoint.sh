@@ -57,13 +57,13 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 OPERADRIVER_CMD="/usr/bin/operadriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS}"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-    /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
     XVFB_PID=$!
 
-    DISPLAY="$DISPLAY" $OPERADRIVER_CMD &
+    eval "DISPLAY=\"$DISPLAY\" $OPERADRIVER_CMD &"
     DRIVER_PID=$!
 else
-    /usr/bin/xvfb-run $XVFB_ARGS $OPERADRIVER_CMD &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $OPERADRIVER_CMD &"
     XVFB_PID=$!
 fi
 

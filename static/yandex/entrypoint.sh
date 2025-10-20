@@ -57,14 +57,14 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 YANDEXDRIVER_CMD="/usr/bin/yandexdriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS}"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-  /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
+    XVFB_PID=$!
 
-  DISPLAY="$DISPLAY" $YANDEXDRIVER_CMD &
-  DRIVER_PID=$!
+    eval "DISPLAY=\"$DISPLAY\" $YANDEXDRIVER_CMD &"
+    DRIVER_PID=$!
 else
-  /usr/bin/xvfb-run $XVFB_ARGS $YANDEXDRIVER_CMD &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $YANDEXDRIVER_CMD &"
+    XVFB_PID=$!
 fi
 
 wait_for_x_server() {

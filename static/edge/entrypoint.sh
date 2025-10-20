@@ -57,13 +57,13 @@ XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -li
 MSEDGEDRIVER_CMD="/usr/bin/msedgedriver --port=4444 --allowed-ips='' --allowed-origins='*' ${DRIVER_ARGS}"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-    /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
     XVFB_PID=$!
 
-    DISPLAY="$DISPLAY" $MSEDGEDRIVER_CMD &
+    eval "DISPLAY=\"$DISPLAY\" $MSEDGEDRIVER_CMD &"
     DRIVER_PID=$!
 else
-    /usr/bin/xvfb-run $XVFB_ARGS $MSEDGEDRIVER_CMD &
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $MSEDGEDRIVER_CMD &"
     XVFB_PID=$!
 fi
 

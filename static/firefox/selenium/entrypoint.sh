@@ -36,14 +36,14 @@ SELENIUM_CMD="/usr/bin/java -Xmx256m -Djava.security.egd=file:/dev/./urandom \
 -port 4444 -browserTimeout 120"
 
 if [ "$USE_FLUXBOX" = "true" ]; then
-  /usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display "$DISPLAY" -log /dev/null 2>/dev/null &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS /usr/bin/fluxbox -display \"$DISPLAY\" -log /dev/null 2>/dev/null &"
+    XVFB_PID=$!
 
-  DISPLAY="$DISPLAY" $SELENIUM_CMD &
-  SELENIUM_PID=$!
+    eval "DISPLAY=\"$DISPLAY\" $SELENIUM_CMD &"
+    DRIVER_PID=$!
 else
-  /usr/bin/xvfb-run $XVFB_ARGS $SELENIUM_CMD &
-  XVFB_PID=$!
+    eval "/usr/bin/xvfb-run $XVFB_ARGS $SELENIUM_CMD &"
+    XVFB_PID=$!
 fi
 
 wait_for_x_server() {

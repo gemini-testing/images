@@ -1,6 +1,9 @@
 #!/bin/bash
 
 if [ "$(id -u)" = "0" ]; then
+    # Fix hostname resolution to avoid DNS timeout (needs root)
+    echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
+
     mkdir -p /tmp/.X11-unix
     chown selenium:nogroup /tmp/.X11-unix
     chmod 755 /tmp/.X11-unix

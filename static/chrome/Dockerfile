@@ -23,7 +23,5 @@ RUN \
     chmod +x /usr/bin/chromedriver && \
     chown -R selenium:nogroup /etc/opt/chrome/policies/managed/
 
-USER selenium
-
 EXPOSE 4444
 ENTRYPOINT ["/entrypoint.sh"]

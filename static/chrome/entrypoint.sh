@@ -1,4 +1,13 @@
 #!/bin/bash
+
+if [ "$(id -u)" = "0" ]; then
+    mkdir -p /tmp/.X11-unix
+    chown selenium:nogroup /tmp/.X11-unix
+    chmod 755 /tmp/.X11-unix
+
+    exec su selenium -c "$0"
+fi
+
 SCREEN_RESOLUTION=${SCREEN_RESOLUTION:-"1920x1080x24"}
 DISPLAY_NUM=99
 export DISPLAY=":$DISPLAY_NUM"

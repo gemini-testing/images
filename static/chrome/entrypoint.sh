@@ -1,6 +1,19 @@
 #!/bin/bash
+
+if [ "$(id -u)" = "0" ]; then
+    # Fix hostname resolution to avoid DNS timeout (needs root)
+    echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
+
+    mkdir -p /tmp/.X11-unix
+    chown selenium:nogroup /tmp/.X11-unix
+    chmod 755 /tmp/.X11-unix
+
+    exec su selenium -c "$0"
+fi
+
 SCREEN_RESOLUTION=${SCREEN_RESOLUTION:-"1920x1080x24"}
-DISPLAY_NUM=99
+# https://nda.ya.ru/t/C_gtLkrI7MWx8H
+DISPLAY_NUM=$(($(printf "%d" 0x${HOSTNAME:0:12}) % 59535))
 export DISPLAY=":$DISPLAY_NUM"
 
 if [ -z ${VERBOSE+x} ]; then VERBOSE=1; fi
@@ -103,6 +116,9 @@ if [ "$USE_FLUXBOX" = "true" ]; then
 else
   wait_for_x_server "xdpyinfo -display \"$DISPLAY\" >/dev/null 2>&1" "Waiting X server..."
 fi
+
+echo "Moving cursor to 0 0 position"
+DISPLAY=$DISPLAY xdotool mousemove 0 0
 
 if [ "$ENABLE_VNC" == "true" ]; then
     x11vnc -display "$DISPLAY" -passwd selenoid -shared -forever -loop500 -rfbport 5900 -rfbportv6 5900 -logfile /dev/null &

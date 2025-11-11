@@ -25,8 +25,10 @@ Moved to: http://aerokube.com/images/latest/#_building_images
 To build a chrome image for testing, you must specify `--source-dir` option. For example:
 
 ```bash
-./images chrome -b 134.0.6998.165 -d 134.0.6998.165 -t selenoid/chrome:134.0 --source-dir chrome/for-testing
+./images chrome -b 138.0.7204.183 -d 138.0.7204.183 -t selenoid/chrome-ft:138.0 --source-dir chrome/for-testing
 ```
+
+To get the latest version number, visit: https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$MAJOR_VERSION (replace `$MAJOR_VERSION` with the desired major version, e.g., `138`).
 
 ## Image information
 

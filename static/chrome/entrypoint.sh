@@ -114,6 +114,9 @@ else
   wait_for_x_server "xdpyinfo -display \"$DISPLAY\" >/dev/null 2>&1" "Waiting X server..."
 fi
 
+echo "Moving cursor to 0 0 position"
+DISPLAY=$DISPLAY xdotool mousemove 0 0
+
 if [ "$ENABLE_VNC" == "true" ]; then
     x11vnc -display "$DISPLAY" -passwd selenoid -shared -forever -loop500 -rfbport 5900 -rfbportv6 5900 -logfile /dev/null &
     X11VNC_PID=$!

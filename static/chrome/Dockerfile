@@ -20,6 +20,9 @@ COPY chromedriver /usr/bin/
 COPY entrypoint.sh /
 
 RUN \
+    apt-get update && \
+    apt-get install -y --no-install-recommends xdotool && \
+    rm -rf /var/lib/apt/lists/* /tmp/* && \
     chmod +x /usr/bin/chromedriver && \
     chown -R selenium:nogroup /etc/opt/chrome/policies/managed/
 

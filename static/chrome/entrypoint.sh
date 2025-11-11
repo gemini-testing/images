@@ -9,7 +9,8 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 SCREEN_RESOLUTION=${SCREEN_RESOLUTION:-"1920x1080x24"}
-DISPLAY_NUM=99
+# https://nda.ya.ru/t/C_gtLkrI7MWx8H
+DISPLAY_NUM=$(($(printf "%d" 0x${HOSTNAME:0:12}) % 59535))
 export DISPLAY=":$DISPLAY_NUM"
 
 if [ -z ${VERBOSE+x} ]; then VERBOSE=1; fi

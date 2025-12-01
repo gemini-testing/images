@@ -8,6 +8,11 @@ if [ "$(id -u)" = "0" ]; then
     exec su selenium -c "$0"
 fi
 
+mkdir -p /tmp/dbus-session
+dbus-daemon --session --nofork --address="unix:path=/tmp/dbus-session/bus" 2>/dev/null &
+DBUS_PID=$!
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/tmp/dbus-session/bus"
+
 SCREEN_RESOLUTION=${SCREEN_RESOLUTION:-"1920x1080x24"}
 # https://nda.ya.ru/t/C_gtLkrI7MWx8H
 DISPLAY_NUM=$(($(printf "%d" 0x${HOSTNAME:0:12}) % 59535))
@@ -38,6 +43,9 @@ clean() {
   fi
   if [ -n "$DEVTOOLS_PID" ]; then
     kill -TERM "$DEVTOOLS_PID"
+  fi
+  if [ -n "$DBUS_PID" ]; then
+    kill -TERM "$DBUS_PID"
   fi
 }
 

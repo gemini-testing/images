@@ -43,9 +43,6 @@ FILESERVER_PID=$!
 DISPLAY="$DISPLAY" /usr/bin/xseld &
 XSELD_PID=$!
 
-/usr/bin/firefox-bidi-proxy --listen ":4444" --upstream "127.0.0.1:4445" --bidi-upstream "127.0.0.1:9222" &
-BIDI_PROXY_PID=$!
-
 XVFB_ARGS="-l -n $DISPLAY_NUM -s \"-ac -screen 0 $SCREEN_RESOLUTION -noreset -listen tcp\""
 SELENOID_CMD="/usr/bin/selenoid -listen :4445 -conf /tmp/browsers.json -disable-docker -timeout 1h -max-timeout 24h -enable-file-upload -capture-driver-logs"
 
@@ -59,6 +56,16 @@ else
     eval "/usr/bin/xvfb-run $XVFB_ARGS $SELENOID_CMD &"
     XVFB_PID=$!
 fi
+
+wait_for_port() {
+  local host="$1"
+  local port="$2"
+  local msg="$3"
+  until (echo >"/dev/tcp/${host}/${port}") >/dev/null 2>&1; do
+    echo "$msg"
+    sleep 0.1
+  done
+}
 
 wait_for_x_server() {
   local cmd="$1"
@@ -80,6 +87,11 @@ if [ "$USE_FLUXBOX" = "true" ]; then
 else
   wait_for_x_server "xdpyinfo -display \"$DISPLAY\" >/dev/null 2>&1" "Waiting X server..."
 fi
+
+wait_for_port "127.0.0.1" "4445" "Waiting inner selenoid..."
+
+/usr/bin/firefox-bidi-proxy --listen ":4444" --upstream "127.0.0.1:4445" --bidi-upstream "localhost:9222" &
+BIDI_PROXY_PID=$!
 
 if [ "$ENABLE_VNC" == "true" ]; then
     x11vnc -display "$DISPLAY" -passwd selenoid -shared -forever -loop500 -rfbport 5900 -rfbportv6 5900 -logfile /dev/null &

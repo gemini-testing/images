@@ -23,7 +23,7 @@ var (
 func init() {
 	flag.StringVar(&listen, "listen", ":4444", "Network address to accept connections")
 	flag.StringVar(&upstream, "upstream", "127.0.0.1:4445", "Network address of inner WebDriver upstream")
-	flag.StringVar(&bidiUpstream, "bidi-upstream", "127.0.0.1:9222", "Network address of Firefox BiDi websocket upstream")
+	flag.StringVar(&bidiUpstream, "bidi-upstream", "localhost:9222", "Network address of Firefox BiDi websocket upstream")
 }
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 		Director: func(req *http.Request) {
 			req.URL.Scheme = bidiURL.Scheme
 			req.URL.Host = bidiURL.Host
-			req.Host = "localhost"
+			req.Host = bidiURL.Host
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			log.Printf("[BIDI_PROXY_ERROR] [%v]", err)

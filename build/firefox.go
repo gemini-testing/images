@@ -3,6 +3,7 @@ package build
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,6 +19,12 @@ type Firefox struct {
 	SeleniumVersion string
 	Requirements
 }
+
+const (
+	// Firefox started shipping WebDriver BiDi commands in version 94.
+	// Source: geckodriver v0.30.0 release notes.
+	firefoxBiDiMinMajorVersion = 94
+)
 
 func (c *Firefox) Build() error {
 
@@ -45,9 +52,9 @@ func (c *Firefox) Build() error {
 			return fmt.Errorf("create %v temporary dir: %v", pkgDestDir, err)
 		}
 		pkgDestPath := filepath.Join(pkgDestDir, "firefox.deb")
-		err = os.Rename(pkgSrcPath, pkgDestPath)
+		err = copyFile(pkgSrcPath, pkgDestPath)
 		if err != nil {
-			return fmt.Errorf("move package: %v", err)
+			return fmt.Errorf("copy package: %v", err)
 		}
 	}
 
@@ -78,9 +85,13 @@ func (c *Firefox) Build() error {
 
 	firefoxMajorVersion, err := strconv.Atoi(majorVersion(pkgTagVersion))
 	geckoDriverCompatible := firefoxMajorVersion > 48
+	withBidiProxy := geckoDriverCompatible && firefoxMajorVersion >= firefoxBiDiMinMajorVersion
 	srcDir := "firefox/selenoid"
 	if !geckoDriverCompatible {
 		srcDir = "firefox/selenium"
+	}
+	if withBidiProxy {
+		srcDir = "firefox/with-bidi-proxy"
 	}
 
 	image, err := NewImage(srcDir, destDir, c.Requirements)
@@ -102,18 +113,12 @@ func (c *Firefox) Build() error {
 			return fmt.Errorf("failed to download Selenoid: %v", err)
 		}
 		labels = append(labels, fmt.Sprintf("selenoid=%s", selenoidVersion))
-		image.Labels = labels
 
-		browsersJsonFile := filepath.Join(image.Dir, "browsers.json")
-		data, err := os.ReadFile(browsersJsonFile)
+		err = writeGeckoBrowsersJSON(image.Dir, firefoxMajorMinorVersion)
 		if err != nil {
-			return fmt.Errorf("failed to read browsers.json: %v", err)
+			return fmt.Errorf("failed to write browsers.json: %v", err)
 		}
-		newContents := strings.Replace(string(data), "@@VERSION@@", firefoxMajorMinorVersion, -1)
-		err = os.WriteFile(browsersJsonFile, []byte(newContents), 0)
-		if err != nil {
-			return fmt.Errorf("failed to update browsers.json: %v", err)
-		}
+		image.Labels = labels
 	} else {
 		driverVersion, err := c.downloadSeleniumJAR(image.Dir)
 		if err != nil {
@@ -224,4 +229,43 @@ func (c *Firefox) downloadSeleniumJAR(dir string) (string, error) {
 	}
 	return version, nil
 
+}
+
+func copyFile(src string, dest string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return destFile.Sync()
+}
+
+func writeGeckoBrowsersJSON(dir string, version string) error {
+	const template = `{
+  "firefox": {
+    "default": "%s",
+    "versions": {
+      "%s": {
+        "image": ["/usr/bin/geckodriver"@@DRIVER_ARGS@@]
+      }
+    }
+  }
+}
+`
+
+	outputPath := filepath.Join(dir, "browsers.json")
+	content := fmt.Sprintf(template, version, version)
+	return os.WriteFile(outputPath, []byte(content), 0644)
 }

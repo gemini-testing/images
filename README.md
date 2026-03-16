@@ -30,6 +30,25 @@ To build a chrome image for testing, you must specify `--source-dir` option. For
 
 To get the latest version number, visit: https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$MAJOR_VERSION (replace `$MAJOR_VERSION` with the desired major version, e.g., `138`).
 
+### How to build Firefox
+
+1. Download the Firefox deb package from https://ftp.mozilla.org/pub/firefox/releases/
+
+2. Build the image:
+    ```bash
+    # install pkger tool
+    go install github.com/markbates/pkger/cmd/pkger@latest
+    export PATH="$(go env GOPATH)/bin:$PATH"
+
+    go generate ./...
+
+    go build -o images .
+
+    ./images firefox -b /path/to/firefox_145.0+build1-0ubuntu0.18.04.1.deb -t selenoid/firefox:145.0-bidi-proxy
+    ```
+
+For Firefox `94+` the build automatically uses an image with a reverse proxy needed for BiDi to work. Selenoid expects both HTTP and BiDi WebSocket endpoints to be available at `<hostname>:4444/session/<session-id>` and chromedriver does exactly that. Geckodriver, however, can only serve them on different ports: one for HTTP and one for BiDi WebSocket. The reverse proxy makes this behavior similar to chromedriver's.
+
 ## Image information
 
 Moved to: http://aerokube.com/images/latest/#_browser_image_information

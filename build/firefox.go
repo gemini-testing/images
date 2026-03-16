@@ -17,9 +17,14 @@ const (
 type Firefox struct {
 	SelenoidVersion string
 	SeleniumVersion string
-	WithBidiProxy   bool
 	Requirements
 }
+
+const (
+	// Firefox started shipping WebDriver BiDi commands in version 94.
+	// Source: geckodriver v0.30.0 release notes.
+	firefoxBiDiMinMajorVersion = 94
+)
 
 func (c *Firefox) Build() error {
 
@@ -79,16 +84,13 @@ func (c *Firefox) Build() error {
 	}
 
 	firefoxMajorVersion, err := strconv.Atoi(majorVersion(pkgTagVersion))
-	isWithBidiProxy := c.WithBidiProxy
 	geckoDriverCompatible := firefoxMajorVersion > 48
-	if isWithBidiProxy && !geckoDriverCompatible {
-		return errors.New("with-bidi-proxy is supported only for geckodriver-compatible versions")
-	}
+	withBidiProxy := geckoDriverCompatible && firefoxMajorVersion >= firefoxBiDiMinMajorVersion
 	srcDir := "firefox/selenoid"
 	if !geckoDriverCompatible {
 		srcDir = "firefox/selenium"
 	}
-	if isWithBidiProxy {
+	if withBidiProxy {
 		srcDir = "firefox/with-bidi-proxy"
 	}
 

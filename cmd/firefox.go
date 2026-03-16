@@ -8,7 +8,6 @@ import (
 var (
 	selenoidVersion string
 	seleniumVersion string
-	withBidiProxy   bool
 
 	firefoxCmd = &cobra.Command{
 		Use:   "firefox",
@@ -25,7 +24,7 @@ var (
 				Tags:           tags,
 				PushImage:      push,
 			}
-			firefox := &build.Firefox{SelenoidVersion: selenoidVersion, SeleniumVersion: seleniumVersion, WithBidiProxy: withBidiProxy, Requirements: req}
+			firefox := &build.Firefox{SelenoidVersion: selenoidVersion, SeleniumVersion: seleniumVersion, Requirements: req}
 			return firefox.Build()
 		},
 	}
@@ -34,5 +33,4 @@ var (
 func init() {
 	firefoxCmd.Flags().StringVar(&selenoidVersion, "selenoid-version", build.LatestVersion, "Selenoid binary version")
 	firefoxCmd.Flags().StringVar(&seleniumVersion, "selenium-version", "", "Selenium JAR version")
-	firefoxCmd.Flags().BoolVar(&withBidiProxy, "with-bidi-proxy", false, "Build Firefox image with websocket proxy on /session/<id>")
 }

@@ -41,18 +41,13 @@ type BrowserSource string
 
 // Return regular file corresponding to this source and optionally download this file
 func (bs *BrowserSource) Prepare() (string, string, error) {
-	src := strings.TrimSpace(string(*bs))
+	src := string(*bs)
 	if src == "" {
 		return "", "", errors.New("empty browser source")
 	}
-	if fi, err := os.Stat(src); err == nil {
-		if fi.IsDir() {
-			return "", "", fmt.Errorf("browser source %q is a directory, expected package file path, package URL or package version", src)
-		}
+	if _, err := os.Stat(src); err == nil {
 		pkgName := filepath.Base(src)
 		return src, extractVersion(pkgName), nil
-	} else if !os.IsNotExist(err) {
-		return "", "", fmt.Errorf("check browser source %q: %v", src, err)
 	} else if u, err := url.Parse(src); strings.HasPrefix(src, "http") && err == nil {
 		pkgName := path.Base(src)
 		data, err := downloadFile(u.String())
@@ -70,11 +65,6 @@ func (bs *BrowserSource) Prepare() (string, string, error) {
 		}
 		return outputFileName, extractVersion(pkgName), nil
 	}
-
-	if filepath.IsAbs(src) || strings.Contains(src, string(filepath.Separator)) || strings.HasSuffix(strings.ToLower(src), ".deb") {
-		return "", "", fmt.Errorf("browser package file not found: %s", src)
-	}
-
 	return "", src, nil
 }
 
@@ -149,17 +139,10 @@ func tmpDir() (string, error) {
 }
 
 func copySourceFiles(srcDir string, destDir string) (string, error) {
-	copiedFromFS, err := copySourceFilesFromFS(srcDir, destDir)
-	if err != nil {
-		return "", err
-	}
-	if copiedFromFS {
-		return filepath.Join(destDir, srcDir), nil
-	}
 
 	const prefix = "/static"
 	walkDir := filepath.Join(prefix, srcDir)
-	err = pkger.Walk(walkDir, func(path string, info os.FileInfo, err error) error {
+	err := pkger.Walk(walkDir, func(path string, info os.FileInfo, err error) error {
 
 		if err != nil {
 			return err
@@ -213,66 +196,6 @@ func copySourceFiles(srcDir string, destDir string) (string, error) {
 	}
 
 	return filepath.Join(destDir, srcDir), nil
-}
-
-func copySourceFilesFromFS(srcDir string, destDir string) (bool, error) {
-	staticRoot := "static"
-	sourcePath := filepath.Join(staticRoot, srcDir)
-
-	info, err := os.Stat(sourcePath)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	if err != nil {
-		return false, fmt.Errorf("stat source dir %s: %v", sourcePath, err)
-	}
-	if !info.IsDir() {
-		return false, fmt.Errorf("source path is not a directory: %s", sourcePath)
-	}
-
-	err = filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		relativePath, err := filepath.Rel(staticRoot, path)
-		if err != nil {
-			return err
-		}
-		outputPath := filepath.Join(destDir, relativePath)
-		if info.IsDir() {
-			return os.MkdirAll(outputPath, info.Mode())
-		}
-
-		src, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer src.Close()
-
-		dest, err := os.Create(outputPath)
-		if err != nil {
-			return err
-		}
-		defer dest.Close()
-
-		_, err = io.Copy(dest, src)
-		if err != nil {
-			return err
-		}
-
-		err = dest.Sync()
-		if err != nil {
-			return err
-		}
-
-		return os.Chmod(outputPath, info.Mode())
-	})
-	if err != nil {
-		return false, fmt.Errorf("copy files from filesystem: %v", err)
-	}
-
-	return true, nil
 }
 
 func (i *Image) Build() error {

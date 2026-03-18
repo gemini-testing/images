@@ -114,7 +114,7 @@ func (c *Firefox) Build() error {
 		}
 		labels = append(labels, fmt.Sprintf("selenoid=%s", selenoidVersion))
 
-		err = writeGeckoBrowsersJSON(image.Dir, firefoxMajorMinorVersion)
+		err = writeGeckoBrowsersJSON(image.Dir, firefoxMajorMinorVersion, withBidiProxy)
 		if err != nil {
 			return fmt.Errorf("failed to write browsers.json: %v", err)
 		}
@@ -252,20 +252,26 @@ func copyFile(src string, dest string) error {
 	return destFile.Sync()
 }
 
-func writeGeckoBrowsersJSON(dir string, version string) error {
-	const template = `{
+func writeGeckoBrowsersJSON(dir string, version string, withBidi bool) error {
+	versionsBlock := fmt.Sprintf(`      "%s": {
+        "image": ["/usr/bin/geckodriver"@@DRIVER_ARGS@@]
+      }`, version)
+	if withBidi {
+		versionsBlock += fmt.Sprintf(`,
+      "%s-with-bidi": {
+        "image": ["/usr/bin/geckodriver"@@DRIVER_ARGS@@]
+      }`, version)
+	}
+	content := fmt.Sprintf(`{
   "firefox": {
     "default": "%s",
     "versions": {
-      "%s": {
-        "image": ["/usr/bin/geckodriver"@@DRIVER_ARGS@@]
-      }
+%s
     }
   }
 }
-`
+`, version, versionsBlock)
 
 	outputPath := filepath.Join(dir, "browsers.json")
-	content := fmt.Sprintf(template, version, version)
 	return os.WriteFile(outputPath, []byte(content), 0644)
 }

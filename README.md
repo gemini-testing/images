@@ -1,24 +1,10 @@
 # Browser Images
-[![Build Status](https://github.com/aerokube/images/workflows/build/badge.svg)](https://github.com/aerokube/images/actions?query=workflow%3Abuild)
-[![Release](https://img.shields.io/github/release/aerokube/images.svg)](https://github.com/aerokube/images/releases/latest)
 
-**UNMAINTAINED**. Consider https://aerokube.com/moon/latest as alternative.
-
-This repository contains [Docker](http://docker.com/) build files to be used for [Selenoid](http://github.com/aerokube/selenoid) and [Moon](http://github.com/aerokube/moon) projects. You can find prebuilt images [here](https://hub.docker.com/u/selenoid/).
-
-## Download Statistics
-
-### Firefox: [![Firefox Docker Pulls](https://img.shields.io/docker/pulls/selenoid/firefox.svg)](https://hub.docker.com/r/selenoid/firefox)
-
-### Chrome: [![Chrome Docker Pulls](https://img.shields.io/docker/pulls/selenoid/chrome.svg)](https://hub.docker.com/r/selenoid/chrome)
-
-### Opera: [![Opera Docker Pulls](https://img.shields.io/docker/pulls/selenoid/opera.svg)](https://hub.docker.com/r/selenoid/opera)
-
-### Android: [![Android Docker Pulls](https://img.shields.io/docker/pulls/selenoid/android.svg)](https://hub.docker.com/r/selenoid/android)
+This repository contains [Docker](http://docker.com/) build files to be used for testing, with [Selenoid](http://github.com/aerokube/selenoid) or on their own. You can find prebuilt images [here](https://github.com/orgs/gemini-testing/packages).
 
 ## Building Images
 
-Moved to: http://aerokube.com/images/latest/#_building_images
+See also: http://aerokube.com/images/latest/#_building_images
 
 ### How to build chrome for testing
 
@@ -30,15 +16,25 @@ To build a chrome image for testing, you must specify `--source-dir` option. For
 
 To get the latest version number, visit: https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$MAJOR_VERSION (replace `$MAJOR_VERSION` with the desired major version, e.g., `138`).
 
-### How to build Chromium from Debian
+### How to build cross-platform Chromium image
+
+Note: this can be done automatically by the GitHub Actions workflow in this repository.
 
 Use `--debian` together with a Chromium major and the native Docker architecture:
 
 ```bash
-./images chromium --debian --architecture arm64 -b 126 -t selenoid/chromium:126
+./images chromium --debian --architecture arm64 -b 126 -t ghcr.io/gemini-testing/browsers/chromium:126.0-arm64
 ```
 
-Supported architectures are `amd64` and `arm64`. Without `--debian`, the existing Ubuntu Chromium build behavior is unchanged.
+Supported architectures are `amd64` and `arm64`. Without `--debian`, image won't be cross-platform and will be based on Ubuntu.
+
+After building images for two platforms, you can merge them like this:
+```bash
+docker buildx imagetools create \
+    --tag ghcr.io/gemini-testing/browsers/chromium:126.0 \
+    ghcr.io/gemini-testing/browsers/chromium:126.0-amd64 \
+    ghcr.io/gemini-testing/browsers/chromium:126.0-arm64
+```
 
 ### How to build Firefox
 

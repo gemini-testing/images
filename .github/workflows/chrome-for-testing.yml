@@ -1,6 +1,6 @@
 name: Build Chrome for Testing image
 
-run-name: Build Chrome for Testing ${{ inputs.chrome_major || '138' }}
+run-name: Build Chrome for Testing ${{ inputs.chrome_major }}
 
 on:
   workflow_dispatch:
@@ -9,16 +9,12 @@ on:
         description: Chrome major version (for example, 148)
         required: true
         type: string
-  push:
-    branches:
-      - users/shadowusr/TESTPLANE-1100
-
 permissions:
   contents: read
   packages: write
 
 concurrency:
-  group: chrome-for-testing-${{ inputs.chrome_major || '138' }}
+  group: chrome-for-testing-${{ inputs.chrome_major }}
   cancel-in-progress: false
 
 env:
@@ -29,7 +25,7 @@ jobs:
     name: Build linux/amd64
     runs-on: ubuntu-24.04
     env:
-      CHROME_MAJOR: ${{ inputs.chrome_major || '138' }}
+      CHROME_MAJOR: ${{ inputs.chrome_major }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

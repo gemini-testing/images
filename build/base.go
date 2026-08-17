@@ -139,8 +139,10 @@ func tmpDir() (string, error) {
 }
 
 func copySourceFiles(srcDir string, destDir string) (string, error) {
+	return copyEmbeddedFiles("/static", srcDir, destDir)
+}
 
-	const prefix = "/static"
+func copyEmbeddedFiles(prefix string, srcDir string, destDir string) (string, error) {
 	walkDir := filepath.Join(prefix, srcDir)
 	err := pkger.Walk(walkDir, func(path string, info os.FileInfo, err error) error {
 
@@ -148,8 +150,12 @@ func copySourceFiles(srcDir string, destDir string) (string, error) {
 			return err
 		}
 
-		regex := regexp.MustCompile(`^.+:/static(.+)$`)
-		relativePath := regex.FindStringSubmatch(path)[1]
+		regex := regexp.MustCompile(`^.+:` + regexp.QuoteMeta(prefix) + `(.+)$`)
+		matches := regex.FindStringSubmatch(path)
+		if len(matches) != 2 {
+			return fmt.Errorf("invalid embedded path: %s", path)
+		}
+		relativePath := matches[1]
 		outputPath := filepath.Join(destDir, relativePath)
 		if info.IsDir() {
 			return os.MkdirAll(outputPath, info.Mode())
@@ -199,10 +205,21 @@ func copySourceFiles(srcDir string, destDir string) (string, error) {
 }
 
 func (i *Image) Build() error {
+	return i.build("")
+}
+
+func (i *Image) buildPlatform(platform string) error {
+	return i.build(platform)
+}
+
+func (i *Image) build(platform string) error {
 
 	args := []string{"build"}
 	for _, tag := range i.Tags {
 		args = append(args, "-t", tag)
+	}
+	if platform != "" {
+		args = append(args, "--platform", platform)
 	}
 	if len(i.BuildArgs) > 0 {
 		for _, arg := range i.BuildArgs {

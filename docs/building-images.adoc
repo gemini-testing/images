@@ -96,6 +96,15 @@ If you wish to automatically use the latest https://chromedriver.chromium.org/do
 $ ./images chrome -b 78.0.3904.97-1 -d latest -t selenoid/chrome:78.0
 ----
 
+* To build Chromium from Debian packages for the native Docker architecture use:
++
+[source,bash]
+----
+$ ./images chromium --debian --architecture arm64 -b 126 -t selenoid/chromium:126
+----
++
+Here `126` is the Chromium major version. Supported architectures are `amd64` and `arm64`. This mode resolves matching `chromium` and `chromium-driver` packages from Debian. Without `--debian`, the existing Ubuntu Chromium build behavior is unchanged.
+
 * To build a Microsoft Edge image use the following command:
 +
 [source,bash]
@@ -153,4 +162,3 @@ To build an image for one of the channels above use the `--channel` flag as foll
 ----
 $ ./images firefox -b 72.0~a1~hg20191114r501767-0ubuntu0.18.04.1~umd1 --channel dev -t selenoid/firefox:72.0a1
 ----
-

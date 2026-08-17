@@ -30,6 +30,16 @@ To build a chrome image for testing, you must specify `--source-dir` option. For
 
 To get the latest version number, visit: https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$MAJOR_VERSION (replace `$MAJOR_VERSION` with the desired major version, e.g., `138`).
 
+### How to build Chromium from Debian
+
+Use `--debian` together with a Chromium major and the native Docker architecture:
+
+```bash
+./images chromium --debian --architecture arm64 -b 126 -t selenoid/chromium:126
+```
+
+Supported architectures are `amd64` and `arm64`. Without `--debian`, the existing Ubuntu Chromium build behavior is unchanged.
+
 ### How to build Firefox
 
 1. Download the Firefox deb package from https://ftp.mozilla.org/pub/firefox/releases/

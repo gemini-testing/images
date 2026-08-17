@@ -5,18 +5,23 @@ import (
 	"errors"
 	"fmt"
 	hv "github.com/hashicorp/go-version"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
 const (
-	chromeDriverBinary    = "chromedriver"
-	newChromeDriverBinary = "chromedriver-linux64/chromedriver"
+	chromeDriverBinary        = "chromedriver"
+	newChromeDriverBinary     = "chromedriver-linux64/chromedriver"
+	chromeForTestingSourceDir = "chrome/for-testing"
 )
+
+var chromeMajorPattern = regexp.MustCompile(`^[0-9]+$`)
 
 type Chrome struct {
 	Requirements
@@ -29,16 +34,28 @@ func (c *Chrome) Build() error {
 		return fmt.Errorf("invalid browser source: %v", err)
 	}
 
-	pkgTagVersion := extractVersion(pkgVersion)
-
 	chromeDriverVersions, err := fetchChromeDriverVersions()
 	if err != nil {
 		return fmt.Errorf("fetch chromedriver versions: %v", err)
 	}
+	resolvedChromeForTesting := shouldResolveChromeForTesting(c.SourceDir, pkgSrcPath, pkgVersion)
+	if resolvedChromeForTesting {
+		major := pkgVersion
+		pkgVersion, err = resolveChromeForTestingVersion(major, chromeDriverVersions)
+		if err != nil {
+			return fmt.Errorf("resolve Chrome for Testing: %v", err)
+		}
+		log.Printf("resolved Chrome for Testing %s to %s", major, pkgVersion)
+	}
 
-	driverVersion, err := c.parseChromeDriverVersion(pkgTagVersion, chromeDriverVersions)
-	if err != nil {
-		return fmt.Errorf("parse chromedriver version: %v", err)
+	pkgTagVersion := extractVersion(pkgVersion)
+
+	driverVersion := pkgTagVersion
+	if !resolvedChromeForTesting || c.DriverVersion != LatestVersion {
+		driverVersion, err = c.parseChromeDriverVersion(pkgTagVersion, chromeDriverVersions)
+		if err != nil {
+			return fmt.Errorf("parse chromedriver version: %v", err)
+		}
 	}
 
 	// Build dev image
@@ -73,6 +90,9 @@ func (c *Chrome) Build() error {
 		return fmt.Errorf("init dev image: %v", err)
 	}
 	devBuildArgs := []string{fmt.Sprintf("VERSION=%s", pkgVersion)}
+	if resolvedChromeForTesting {
+		devBuildArgs = append(devBuildArgs, fmt.Sprintf("CHROME_VERSION=%s", pkgVersion))
+	}
 	devBuildArgs = append(devBuildArgs, c.channelToBuildArgs()...)
 	devImage.BuildArgs = devBuildArgs
 	if pkgSrcPath != "" {
@@ -118,6 +138,36 @@ func (c *Chrome) Build() error {
 	}
 
 	return nil
+}
+
+func shouldResolveChromeForTesting(sourceDir string, pkgSrcPath string, pkgVersion string) bool {
+	return sourceDir == chromeForTestingSourceDir && pkgSrcPath == "" && chromeMajorPattern.MatchString(pkgVersion)
+}
+
+func resolveChromeForTestingVersion(major string, chromeDriverVersions map[string]string) (string, error) {
+	if !chromeMajorPattern.MatchString(major) {
+		return "", fmt.Errorf("browser must be a Chrome major version")
+	}
+
+	var latest *hv.Version
+	latestVersion := ""
+	for candidate := range chromeDriverVersions {
+		if !strings.HasPrefix(candidate, major+".") {
+			continue
+		}
+		version, err := hv.NewVersion(candidate)
+		if err != nil {
+			continue
+		}
+		if latest == nil || latest.LessThan(version) {
+			latest = version
+			latestVersion = candidate
+		}
+	}
+	if latestVersion == "" {
+		return "", fmt.Errorf("no Chrome for Testing release with ChromeDriver found for major %s", major)
+	}
+	return latestVersion, nil
 }
 
 func (c *Chrome) channelToBuildArgs() []string {

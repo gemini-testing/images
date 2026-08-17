@@ -1,6 +1,7 @@
 FROM browsers/base:7.4.2
 
 ARG VERSION
+ARG CHROME_VERSION
 ARG PACKAGE=chrome-for-testing
 
 LABEL browser=$PACKAGE:$VERSION
@@ -57,7 +58,7 @@ RUN \
 
 RUN \
     CHROME_MAJOR_VERSION=$(echo $VERSION | sed -E "s/([0-9]+)\..*/\1/") \
-    && CHROME_VERSION="$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR_VERSION} | sed 's/\r$//')" \
+    && if [ -z "$CHROME_VERSION" ]; then CHROME_VERSION="$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR_VERSION} | sed 's/\r$//')"; fi \
     && wget -qO chrome-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
     && mkdir -p /opt/google/chrome \
     && unzip chrome-linux64.zip -d /tmp \

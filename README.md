@@ -16,6 +16,14 @@ To build a chrome image for testing, you must specify `--source-dir` option. For
 
 To get the latest version number, visit: https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$MAJOR_VERSION (replace `$MAJOR_VERSION` with the desired major version, e.g., `138`).
 
+To resolve the latest matching Chrome and ChromeDriver automatically, specify only the major version:
+
+```bash
+./images chrome -b 148 -t ghcr.io/gemini-testing/browsers/chrome-ft:148.0 --source-dir chrome/for-testing
+```
+
+This can also be built and pushed using the `Build Chrome for Testing image` GitHub Actions workflow.
+
 ### How to build cross-platform Chromium image
 
 Note: this can be done automatically by the GitHub Actions workflow in this repository.

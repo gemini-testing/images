@@ -52,9 +52,8 @@ RUN \
          xdg-utils \
          libcurl4 \
          iproute2 \
-         curl && \
-         curl -O http://host.docker.internal:8080/google-chrome.deb && \
-         apt-get -y purge curl && \
+         wget && \
+         wget -qO google-chrome.deb http://host.docker.internal:8080/google-chrome.deb && \
          dpkg -i google-chrome.deb && \
          ( \
           sed -i -e 's@exec -a "$0" "$HERE/chrome"@& --no-sandbox --disable-gpu@' /opt/google/$INSTALL_DIR/$PACKAGE || \

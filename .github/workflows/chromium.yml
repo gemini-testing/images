@@ -81,7 +81,7 @@ jobs:
         run: |
           tag="$IMAGE:${CHROMIUM_MAJOR}.0-${ARCHITECTURE}"
           docker run -d --name browser-smoke --shm-size 2g -p 4444:4444 "$tag"
-          trap 'docker rm -f browser-smoke >/dev/null' EXIT
+          trap 'status=$?; if (( status != 0 )); then docker logs browser-smoke || true; fi; docker rm -f browser-smoke >/dev/null; exit "$status"' EXIT
 
           for attempt in {1..30}; do
             if curl --fail --silent http://localhost:4444/status >/dev/null; then
@@ -94,12 +94,15 @@ jobs:
             sleep 1
           done
 
-          response="$(curl --fail --silent --show-error \
+          response="$(curl --silent --show-error \
             -H 'Content-Type: application/json' \
-            -d '{"capabilities":{"alwaysMatch":{"browserName":"chrome"}}}' \
+            -d '{"capabilities":{"alwaysMatch":{"browserName":"chrome","goog:chromeOptions":{"args":["--no-sandbox"]}}}}' \
             http://localhost:4444/session)"
           session_id="$(jq -r '.value.sessionId // .sessionId // empty' <<< "$response")"
-          test -n "$session_id"
+          if [[ -z "$session_id" ]]; then
+            echo "$response" >&2
+            exit 1
+          fi
 
           curl --fail --silent --show-error \
             -H 'Content-Type: application/json' \

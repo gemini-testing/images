@@ -1,0 +1,105 @@
+name: Build Chrome for Testing image
+
+run-name: Build Chrome for Testing ${{ inputs.chrome_major }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      chrome_major:
+        description: Chrome major version (for example, 148)
+        required: true
+        type: string
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: chrome-for-testing-${{ inputs.chrome_major }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/gemini-testing/browsers/chrome-ft
+
+jobs:
+  build:
+    name: Build linux/amd64
+    runs-on: ubuntu-24.04
+    env:
+      CHROME_MAJOR: ${{ inputs.chrome_major }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Validate Chrome version
+        run: |
+          if [[ ! "$CHROME_MAJOR" =~ ^[0-9]+$ ]]; then
+            echo "Chrome version must be a major version such as 148" >&2
+            exit 1
+          fi
+
+      - name: Build image orchestrator
+        run: |
+          go install github.com/markbates/pkger/cmd/pkger@v0.17.1
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          go generate .
+          go build -o images .
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          tag="$IMAGE:${CHROME_MAJOR}.0"
+          ./images chrome \
+            --browser "$CHROME_MAJOR" \
+            --source-dir chrome/for-testing \
+            --tag "$tag"
+
+      - name: Test image
+        run: |
+          tag="$IMAGE:${CHROME_MAJOR}.0"
+          docker run -d --name browser-smoke --shm-size 2g -p 4444:4444 "$tag"
+          trap 'docker rm -f browser-smoke >/dev/null' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:4444/status >/dev/null; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              docker logs browser-smoke
+              exit 1
+            fi
+            sleep 1
+          done
+
+          response="$(curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"capabilities":{"alwaysMatch":{"browserName":"chrome"}}}' \
+            http://localhost:4444/session)"
+          session_id="$(jq -r '.value.sessionId // .sessionId // empty' <<< "$response")"
+          test -n "$session_id"
+
+          curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"url":"https://example.com"}' \
+            "http://localhost:4444/session/$session_id/url" >/dev/null
+          title="$(curl --fail --silent --show-error \
+            "http://localhost:4444/session/$session_id/title" | jq -r '.value')"
+          echo "Page title: $title"
+          test "$title" = 'Example Domain'
+
+      - name: Push image
+        run: |
+          docker push "$IMAGE:${CHROME_MAJOR}.0"

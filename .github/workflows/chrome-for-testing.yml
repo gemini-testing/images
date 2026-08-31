@@ -59,11 +59,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build image
         run: |
           tag="$IMAGE:${CHROME_MAJOR}.0"
           ./images chrome \
             --browser "$CHROME_MAJOR" \
             --source-dir chrome/for-testing \
-            --tag "$tag" \
-            --push
+            --tag "$tag"
+
+      - name: Test image
+        run: |
+          tag="$IMAGE:${CHROME_MAJOR}.0"
+          docker run -d --name browser-smoke --shm-size 2g -p 4444:4444 "$tag"
+          trap 'docker rm -f browser-smoke >/dev/null' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:4444/status >/dev/null; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              docker logs browser-smoke
+              exit 1
+            fi
+            sleep 1
+          done
+
+          response="$(curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"capabilities":{"alwaysMatch":{"browserName":"chrome"}}}' \
+            http://localhost:4444/session)"
+          session_id="$(jq -r '.value.sessionId // .sessionId // empty' <<< "$response")"
+          test -n "$session_id"
+
+          curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"url":"https://example.com"}' \
+            "http://localhost:4444/session/$session_id/url" >/dev/null
+          title="$(curl --fail --silent --show-error \
+            "http://localhost:4444/session/$session_id/title" | jq -r '.value')"
+          echo "Page title: $title"
+          test "$title" = 'Example Domain'
+
+      - name: Push image
+        run: |
+          docker push "$IMAGE:${CHROME_MAJOR}.0"

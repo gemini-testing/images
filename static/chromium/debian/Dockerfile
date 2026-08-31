@@ -11,7 +11,7 @@ RUN \
     cd /src/xseld && CGO_ENABLED=0 go build -ldflags="-s -w" -o /usr/local/bin/xseld && \
     cd /src/fileserver && CGO_ENABLED=0 go build -ldflags="-s -w" -o /usr/local/bin/fileserver
 
-FROM debian:bookworm-slim
+FROM debian:${DEBIAN_RELEASE}-slim
 
 ARG DEBIAN_RELEASE
 ARG DEBIAN_SUITE
